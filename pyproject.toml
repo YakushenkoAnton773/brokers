@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "brokers"
+version = "0.1.0"
+description = ""
+authors = ["Yakushenko Anton Aleksandrovich <yakushenkoaa73@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+httpx = "^0.28.1"
+pytest = "^9.0.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
