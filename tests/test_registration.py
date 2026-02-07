@@ -1,8 +1,10 @@
+import json
 import time
 import uuid
-
+from kafka import KafkaProducer
 from framework.internal.http.account import AccountApi
 from framework.internal.http.mail import MailApi
+from framework.internal.kafka.producer import Producer
 
 
 def test_failed_registration(account: AccountApi, mail: MailApi) -> None:
@@ -18,6 +20,22 @@ def test_failed_registration(account: AccountApi, mail: MailApi) -> None:
 def test_success_registration(account: AccountApi, mail: MailApi) -> None:
     base = uuid.uuid4().hex
     account.register_user(login=base, email=f"{base}@mail.ru", password="123123123")
+    for _ in range (10):
+        response = mail.find_message(query=base)
+        if response.json()["total"] > 0:
+            break
+    else:
+        raise AssertionError("Email not found")
+
+
+def test_success_registration_with_kafka_producer(mail: MailApi, kafka_producer: Producer) -> None:
+    base = uuid.uuid4().hex
+    message = {
+        "login": base,
+        "email": f"{base}@mail.ru",
+        "password": "123123123"
+    }
+    kafka_producer.send('register-events', message)
     for _ in range (10):
         response = mail.find_message(query=base)
         if response.json()["total"] > 0:
