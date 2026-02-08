@@ -12,4 +12,9 @@ class AccountApi:
         print(response.content)
         return response
 
+    def activate_user(self, token: str) -> httpx.Response:
+        response = self._client.put("/register/user/activate", params={"token": token})
+        print(response.content)
+        return response
+
 
