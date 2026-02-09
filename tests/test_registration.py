@@ -3,6 +3,7 @@ import time
 import uuid
 from framework.internal.http.account import AccountApi
 from framework.internal.http.mail import MailApi
+from framework.internal.kafka.consumer import Consumer
 from framework.internal.kafka.producer import Producer
 
 def get_activation_token_by_email(email: str, response) -> str:
@@ -42,7 +43,10 @@ def test_success_registration(account: AccountApi, mail: MailApi) -> None:
         raise AssertionError("Email not found")
 
 
-def test_success_registration_with_kafka_producer(mail: MailApi, kafka_producer: Producer) -> None:
+def test_success_registration_with_kafka_producer(
+        kafka_consumer: Consumer,
+        kafka_producer: Producer
+) -> None:
     base = uuid.uuid4().hex
     message = {
         "login": base,
@@ -50,9 +54,9 @@ def test_success_registration_with_kafka_producer(mail: MailApi, kafka_producer:
         "password": "123123123"
     }
     kafka_producer.send('register-events', message)
-    for _ in range (10):
-        response = mail.find_message(query=base)
-        if response.json()["total"] > 0:
+    for i in range(10):
+        message = kafka_consumer.get_message()
+        if message.value["login"] == base:
             break
     else:
         raise AssertionError("Email not found")
