@@ -21,25 +21,17 @@ class Subscriber(ABC):
     def get_message(self, timeout: int = 90):
         try:
             return self._messages.get(timeout=timeout)
-        except queue.Queue:
+        except queue.Empty:
             raise AssertionError(
                 f"No messages from topic: {self.topic}, within timeout: {timeout}"
             )
 
     def find_message(
             self,
-            login: str,
-            timeout: int = 90
-            ) -> ConsumerRecord:
-        try:
-            while True:
-                record = self._messages.get(timeout=timeout)
-                if record.value.get("login") == login:
-                    return record
-        except queue.Empty:
-            pass
-
-        raise AssertionError(
-            f"Message with login '{login}' not found in topic: {self.topic}, within timeout: {timeout}"
-        )
-
+            find_str: str = None):
+        assert find_str != None, "Задайте строку для поиска в сообщении"
+        while True:
+            if find_str != None:
+                message = self.get_message()
+                if find_str in str(message):
+                    return message
