@@ -11,6 +11,8 @@ from framework.helpers.kafka.consumers.register_events_error import (
 from framework.internal.http.account import AccountApi
 from framework.internal.http.mail import MailApi
 from framework.internal.kafka.producer import Producer
+from framework.internal.rmq.publisher import RmqPublisher
+
 
 def get_activation_token_by_email(email: str, response) -> str:
     items = response.json().get("items") or []
@@ -206,3 +208,21 @@ def test_register_events_unknown_error_is_republished_as_validation(
             assert error_type == 'unknown', f"В register-events-errors на шаге 0: error_type не unknown, step {i}, {error_type}"
         if i == 1:
             assert error_type == 'validation', f"В register-events-errors на шаге 1: error_type не validation, step {i}, {error_type}"
+
+
+def test_rmq(rmq_publisher: RmqPublisher, mail: MailApi) -> None:
+    address = f"{uuid.uuid4().hex}@mail.ru"
+    message = {
+        "address": address,
+        "subject": "Published message",
+        "body": "Published message",
+    }
+    rmq_publisher.publish(exchange="dm.mail.sending", message=message)
+
+    for _ in range(10):
+        response = mail.find_message(query=message["address"])
+        if response.json()["total"] > 0:
+            break
+        time.sleep(1)
+    else:
+        raise AssertionError("No mail found")
