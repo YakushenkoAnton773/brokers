@@ -1,4 +1,7 @@
-from typing import Generator
+from typing import (
+    Generator,
+    Any,
+)
 
 import pytest
 
@@ -39,11 +42,11 @@ def register_events_subscriber() -> RegisterEventsSubscriber:
 def register_events_error_subscriber() -> RegisterEventsErrorSubscriber:
     return RegisterEventsErrorSubscriber()
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def kafka_consumer(
         register_events_subscriber: RegisterEventsSubscriber,
         register_events_error_subscriber: RegisterEventsErrorSubscriber,
-) -> Consumer:
+) -> Generator[Consumer,None, None]:
     with Consumer(
         subscribers=[register_events_subscriber, register_events_error_subscriber]
     ) as consumer:
